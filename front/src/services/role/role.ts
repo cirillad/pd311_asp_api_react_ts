@@ -1,18 +1,25 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { ServiceResponse } from "../../types";
-import type { Role } from "./types";
-import { env } from "../../env";
+import { ApiResponse } from "../../types";
+import { Role } from "./types";
 
 export const roleApi = createApi({
     reducerPath: "roleApi",
-    baseQuery: fetchBaseQuery({ baseUrl: env.apiUrl }),
+    baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_API_URL }),
     tagTypes: ["Role"],
     endpoints: (builder) => ({
-        getRoles: builder.query<ServiceResponse<Role[]>, void>({
+        getRoles: builder.query<ApiResponse<Role[]>, void>({
             query: () => "role",
             providesTags: ["Role"],
         }),
-        deleteRole: builder.mutation<ServiceResponse<null>, string>({
+        updateRole: builder.mutation<ApiResponse<null>, Role>({
+            query: (role) => ({
+                url: "role",
+                method: "PUT",
+                body: role,
+            }),
+            invalidatesTags: ["Role"],
+        }),
+        deleteRole: builder.mutation<ApiResponse<null>, string>({
             query: (id) => ({
                 url: "role",
                 method: "DELETE",
@@ -20,28 +27,20 @@ export const roleApi = createApi({
             }),
             invalidatesTags: ["Role"],
         }),
-        createRole: builder.mutation<ServiceResponse<null>, { name: string }>({
-            query: (role) => ({
+        createRole: builder.mutation<ApiResponse<null>, string>({
+            query: (roleName) => ({
                 url: "role",
                 method: "POST",
-                body: role,
+                body: {name: roleName},
             }),
             invalidatesTags: ["Role"],
         }),
-        updateRole: builder.mutation<ServiceResponse<null>, Role>({
-            query: (role) => ({
-                url: "role",
-                method: "PUT",
-                body: role,
-            }),
-            invalidatesTags: ["Role"],
-        })
     }),
 });
 
 export const {
     useGetRolesQuery,
+    useUpdateRoleMutation,
     useDeleteRoleMutation,
-    useCreateRoleMutation,
-    useUpdateRoleMutation
+    useCreateRoleMutation
 } = roleApi;

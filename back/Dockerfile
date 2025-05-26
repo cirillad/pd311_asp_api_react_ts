@@ -4,14 +4,14 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
 # copy csproj and restore as distinct layers
-COPY ["pd311_web_api/pd311_web_api.csproj", "pd311_web_api/"]
-COPY ["pd311_web_api.BLL/pd311_web_api.BLL.csproj", "pd311_web_api.BLL/"]
-COPY ["pd311_web_api.DAL/pd311_web_api.DAL.csproj", "pd311_web_api.DAL/"]
-RUN dotnet restore "pd311_web_api/pd311_web_api.csproj"
+COPY ["pv311_web_api/pv311_web_api.csproj", "pv311_web_api/"]
+COPY ["pv311_web_api.BLL/pv311_web_api.BLL.csproj", "pv311_web_api.BLL/"]
+COPY ["pv311_web_api.DAL/pv311_web_api.DAL.csproj", "pv311_web_api.DAL/"]
+RUN dotnet restore "pv311_web_api/pv311_web_api.csproj"
 
 # copy everything else and build app
 COPY . .
-WORKDIR /app/pd311_web_api
+WORKDIR /app/pv311_web_api
 RUN dotnet publish -o /app/out
 
 
@@ -19,4 +19,4 @@ RUN dotnet publish -o /app/out
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /app/out .
-ENTRYPOINT ["dotnet", "pd311_web_api.dll"]
+ENTRYPOINT ["dotnet", "pv311_web_api.dll"]
