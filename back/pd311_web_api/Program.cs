@@ -72,7 +72,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 // Add database context
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("NpgsqlAzure"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("NpgSqlAzure"));
 });
 
 // Add identity
