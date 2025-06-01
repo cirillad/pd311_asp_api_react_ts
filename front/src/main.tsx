@@ -1,17 +1,18 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "./index.css";
 import App from "./App.tsx";
-import { BrowserRouter } from "react-router";
 import { Provider } from "react-redux";
-import { store } from "./store/index.ts";
+import { store } from "./store";
+import "./index.css";
+import "primereact/resources/themes/lara-light-cyan/theme.css";
+import { BrowserRouter } from "react-router";
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <Provider store={store}>
-            <BrowserRouter>
+        <BrowserRouter>
+            <Provider store={store}>
                 <App />
-            </BrowserRouter>
-        </Provider>
+            </Provider>
+        </BrowserRouter>
     </StrictMode>
 );

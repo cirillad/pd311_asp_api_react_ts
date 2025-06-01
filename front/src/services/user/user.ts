@@ -1,25 +1,26 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { ApiResponse } from "../../types";
-import { User } from "./types";
+import type { ServiceResponse } from "../../types";
+import type { User } from "./types";
+import { env } from "../../env";
 
 export const userApi = createApi({
     reducerPath: "userApi",
-    baseQuery: fetchBaseQuery({ baseUrl: import.meta.env.VITE_API_URL }),
+    baseQuery: fetchBaseQuery({ baseUrl: env.apiUrl }),
     tagTypes: ["User"],
     endpoints: (builder) => ({
-        getUsers: builder.query<ApiResponse<User[]>, void>({
+        getUsers: builder.query<ServiceResponse<User[]>, void>({
             query: () => "user",
-            providesTags: ["User"],
+            providesTags: ["User"]
         }),
-        deleteUser: builder.mutation<ApiResponse<null>, string>({
-            query: (id) => ({
+        createUser: builder.mutation<ServiceResponse<null>, FormData>({
+            query: (data) => ({
                 url: "user",
-                method: "DELETE",
-                params: { id },
+                method: "POST",
+                body: data
             }),
-            invalidatesTags: ["User"],
-        }),
-    }),
-});
+            invalidatesTags: ["User"]
+        })
+    })
+})
 
-export const { useGetUsersQuery, useDeleteUserMutation } = userApi;
+export const { useGetUsersQuery, useCreateUserMutation } = userApi;

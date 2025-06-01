@@ -1,21 +1,33 @@
-import React from "react";
 import { Route, Routes } from "react-router";
-import DefaultLayout from "./components/layout/DefaultLayout";
-import HomePage from "./pages/homePage/HomePage";
 import "./App.css";
-import RoleListPage from "./pages/rolePage/RoleListPage";
-import UserListPage from "./pages/userPage/UserListPage";
+import Navbar from "./Components/navbar/Navbar";
+import RoleListPage from "./pages/role/RoleListPage";
+import UserListPage from "./pages/user/UserListPage";
+import CarListPage from "./pages/car/CarListPage";
+import CreateCarPage from "./pages/car/CreateCarPage";
+import UserCreatePage from "./pages/user/UserCreatePage";
+import UserUpdatePage from "./pages/user/UserUpdatePage";
 
-const App: React.FC = () => {
+function App() {
     return (
-        <Routes>
-            <Route path="/" element={<DefaultLayout />}>
-                <Route index element={<HomePage />} />
-                <Route path="role" element={<RoleListPage />} />
-                <Route path="user" element={<UserListPage />} />
-            </Route>
-        </Routes>
+        <>
+            <Navbar />
+            <div style={{ width: "66%", margin: "30px auto" }}>
+                <Routes>
+                    <Route path="/roles" element={<RoleListPage />} />
+                    <Route path="/users">
+                        <Route index element={<UserListPage />} />
+                        <Route path="create" element={<UserCreatePage />} />
+                        <Route path="update/:id" element={<UserUpdatePage />} />
+                    </Route>
+                    <Route path="/cars">
+                        <Route index element={<CarListPage />} />
+                        <Route path="create" element={<CreateCarPage />} />
+                    </Route>
+                </Routes>
+            </div>
+        </>
     );
-};
+}
 
 export default App;
