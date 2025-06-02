@@ -1,23 +1,18 @@
-import React, { useEffect, useState, type ChangeEvent } from "react";
+import React, { useEffect, useState, type ChangeEvent, useRef } from "react";
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
-import type { CreateUser } from "../../services/user/types";
 import { Checkbox, type CheckboxChangeEvent } from "primereact/checkbox";
-import {
-    MultiSelect,
-    type MultiSelectChangeEvent,
-} from "primereact/multiselect";
+import { MultiSelect, type MultiSelectChangeEvent } from "primereact/multiselect";
+import { Toast } from "primereact/toast";
+import { useNavigate } from "react-router";
+
+import type { CreateUser } from "../../services/user/types";
 import { useGetRolesQuery } from "../../services/role/role";
 import type { Role } from "../../services/role/types";
 import { useCreateUserMutation } from "../../services/user/user";
-import { useParams } from "react-router";
 
-const UserUpdatePage: React.FC = () => {
-    const {id} = useParams();
-    console.log(id);
-
-
-    const [selectedRoles, setSelectedRoles] = useState<Role[] | null>(null);
+const UserCreatePage: React.FC = () => {
+    const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
     const [userData, setUserData] = useState<CreateUser>({
         email: "",
         userName: "",
@@ -28,39 +23,73 @@ const UserUpdatePage: React.FC = () => {
         image: null,
         emailConfirmed: false,
     });
-
     const [image, setImage] = useState<File | null>(null);
-    const { data, isLoading, isError } = useGetRolesQuery();
+
+    const toast = useRef<Toast>(null);
+    const navigate = useNavigate();
+
+    const { data, isError } = useGetRolesQuery();
     const [createUser] = useCreateUserMutation();
 
-    let roles: Role[] = [];
-
-    if (!isLoading && !isError && data) {
-        if (data.payload) {
-            roles = data.payload as Role[];
+    useEffect(() => {
+        if (data?.payload) {
+            const userRole = data.payload.find((r) => r.name === "user");
+            if (userRole) setSelectedRoles([userRole]);
         }
-    }
+    }, [data]);
+
+    const showSuccessToast = (message: string) => {
+        toast.current?.show({
+            severity: "success",
+            summary: "Success",
+            detail: message,
+            life: 3000,
+        });
+    };
+
+    const showErrorToast = (message: string) => {
+        toast.current?.show({
+            severity: "error",
+            summary: "Error",
+            detail: message,
+            life: 3000,
+        });
+    };
+
+    const showResult = (res: any) => {
+        if (!res.error) {
+            if ("message" in res.data) {
+                showSuccessToast(res.data.message);
+            }
+        } else {
+            if ("data" in res.error) {
+                const data = res.error.data as any;
+                if ("message" in data) {
+                    showErrorToast(data.message);
+                } else if ("title" in data) {
+                    showErrorToast(data.title);
+                }
+            }
+        }
+    };
 
     const inputChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setUserData((prev) => {
-            return { ...prev, [name]: value };
-        });
+        setUserData((prev) => ({ ...prev, [name]: value }));
     };
 
     const checkboxChangeHandler = (e: CheckboxChangeEvent) => {
-        setUserData((prev) => {
-            if (e.checked !== undefined) {
-                return { ...prev, emailConfirmed: e.checked };
-            }
-            return prev;
-        });
+        setUserData((prev) => ({ ...prev, emailConfirmed: !!e.checked }));
     };
 
     const uploadImageHandler = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
+        if (e.target.files?.length) {
             setImage(e.target.files[0]);
         }
+    };
+
+    const selectChangeHandler = (e: MultiSelectChangeEvent) => {
+        setSelectedRoles(e.value as Role[]);
     };
 
     const submitHandler = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -72,106 +101,98 @@ const UserUpdatePage: React.FC = () => {
         formData.append("password", userData.password);
         formData.append("firstName", userData.firstName);
         formData.append("lastName", userData.lastName);
-        formData.append(
-            "emailConfirmed",
-            userData.emailConfirmed ? "true" : "false"
-        );
-        formData.append("image", image ? image : "");
+        formData.append("emailConfirmed", userData.emailConfirmed.toString());
 
-        if (selectedRoles) {
-            for (const role of selectedRoles) {
-                formData.append("roles", role.name);
-            }
+        if (image) {
+            formData.append("image", image);  // Просто додаємо файл напряму без змін
         }
+
+        selectedRoles.forEach((role) => {
+            formData.append("roles", role.name);
+        });
 
         const response = await createUser(formData);
-        console.log(response);
-    };
+        showResult(response);
 
-    useEffect(() => {
-        if(data?.payload) {
-            const userRole = data?.payload.find(r => r.name === "user");
-            if(userRole) {
-                setSelectedRoles([userRole]);
-            }
+        if (!response.error) {
+            navigate("/users");
         }
-    }, [data]);
-
-    const selectChangeHandler = (e: MultiSelectChangeEvent) => {
-        if (e.value.length === 0) {
-            return;
-        }
-        setSelectedRoles(e.value);
     };
-
     return (
-        <div>
-            <div>
+        <>
+            <Toast ref={toast} />
+            <div style={{ maxWidth: 400, margin: "auto", padding: 20, background: "#fff", borderRadius: 8 }}>
+                <h2 style={{ textAlign: "center", marginBottom: 20 }}>Create New User</h2>
+
                 <InputText
+                    name="email"
+                    value={userData.email}
                     onChange={inputChangeHandler}
                     placeholder="Email"
-                    name="email"
+                    style={{ width: "100%", marginBottom: 12 }}
                 />
-            </div>
-            <div>
+
                 <InputText
+                    name="userName"
+                    value={userData.userName}
                     onChange={inputChangeHandler}
                     placeholder="User Name"
-                    name="userName"
+                    style={{ width: "100%", marginBottom: 12 }}
                 />
-            </div>
-            <div>
+
                 <InputText
+                    name="password"
+                    type="password"
+                    value={userData.password}
                     onChange={inputChangeHandler}
                     placeholder="Password"
-                    type="password"
-                    name="password"
+                    style={{ width: "100%", marginBottom: 12 }}
                 />
-            </div>
-            <div>
+
                 <InputText
-                    onChange={inputChangeHandler}
-                    placeholder="First name"
-                    type="text"
                     name="firstName"
-                />
-            </div>
-            <div>
-                <InputText
+                    value={userData.firstName}
                     onChange={inputChangeHandler}
-                    placeholder="Last name"
+                    placeholder="First Name"
+                    style={{ width: "100%", marginBottom: 12 }}
+                />
+
+                <InputText
                     name="lastName"
+                    value={userData.lastName}
+                    onChange={inputChangeHandler}
+                    placeholder="Last Name"
+                    style={{ width: "100%", marginBottom: 12 }}
                 />
-            </div>
-            <div>
-                <Checkbox
-                    checked={userData.emailConfirmed}
-                    onChange={checkboxChangeHandler}
-                />
-                <label style={{ marginLeft: "10px" }}>Email confirmed</label>
-            </div>
-            {!isError && data && selectedRoles && (
-                <div>
+
+                <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+                    <Checkbox
+                        inputId="emailConfirmed"
+                        checked={userData.emailConfirmed}
+                        onChange={checkboxChangeHandler}
+                    />
+                    <label htmlFor="emailConfirmed" style={{ marginLeft: 8 }}>
+                        Email confirmed
+                    </label>
+                </div>
+
+                {!isError && data?.payload && (
                     <MultiSelect
                         value={selectedRoles}
-                        loading={isLoading}
+                        options={data.payload}
                         onChange={selectChangeHandler}
-                        options={roles}
                         optionLabel="name"
                         placeholder="Select roles"
-                        maxSelectedLabels={3}
-                        className="w-full md:w-20rem"
+                        style={{ width: "100%", marginBottom: 12 }}
                     />
-                </div>
-            )}
-            <div>
-                <input type="file" onChange={uploadImageHandler} name="image" />
+                )}
+
+                <input type="file" accept="image/*" onChange={uploadImageHandler} style={{ marginBottom: 12 }} />
+
+                <Button label="Create User" onClick={submitHandler} style={{ width: "100%" }} />
             </div>
-            <div style={{ marginTop: "10px" }}>
-                <Button onClick={submitHandler}>Add</Button>
-            </div>
-        </div>
+        </>
     );
 };
 
-export default UserUpdatePage;
+export default UserCreatePage;
